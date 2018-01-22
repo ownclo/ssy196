@@ -1,12 +1,13 @@
 [H, S_table] = hamming_15_11_tables();
 
-maxRuns = 1e4;
+% plot was done with maxRuns = 1e4
+maxRuns = 1e3;
 EbN0sdB = -2:10;
 EbN0s = db2pow(EbN0sdB); % db
 
-%BERs_1 = arrayfun(@(ebn0) simulate_product_hamming_bsc(ebn0, H, S_table, 1, maxRuns), EbN0s);
-%BERs_2 = arrayfun(@(ebn0) simulate_product_hamming_bsc(ebn0, H, S_table, 2, maxRuns), EbN0s);
-%BERs_3 = arrayfun(@(ebn0) simulate_product_hamming_bsc(ebn0, H, S_table, 3, maxRuns), EbN0s);
+BERs_1 = arrayfun(@(ebn0) simulate_product_hamming_bsc(ebn0, H, S_table, 1, maxRuns), EbN0s);
+BERs_2 = arrayfun(@(ebn0) simulate_product_hamming_bsc(ebn0, H, S_table, 2, maxRuns), EbN0s);
+BERs_3 = arrayfun(@(ebn0) simulate_product_hamming_bsc(ebn0, H, S_table, 3, maxRuns), EbN0s);
 
 
 figure(2);
