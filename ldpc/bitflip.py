@@ -1,7 +1,5 @@
 import numpy as np
-
-def syndrome(r, H):
-    return np.mod(r.dot(H.T), 2)
+from misc import syndrome
 
 def nf(r, H):
     """

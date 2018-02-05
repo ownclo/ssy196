@@ -14,7 +14,7 @@ def slice_dict(adict):
 # no optimization of pfunc - copy each time
 # nd * (nd - 1) operations.
 def bpa_process(inbox, pfunc):
-    return { i : pfunc(inbox_slice) for i, inbox_slice in slice_dict(inbox).items() }
+    return { i : pfunc(i, inbox_slice) for i, inbox_slice in slice_dict(inbox).items() }
 
 def bpa_stage(inboxes, outboxes, pfunc):
     for i, inbox in inboxes.items():
@@ -31,7 +31,7 @@ def flipinit(d1):
     d2 = {}
     for k1, v1 in d1.items():
         for k2, v2 in v1.items():
-            if (k2 not in d2):
+            if k2 not in d2:
                 d2[k2] = {}
             d2[k2][k1] = v2
     return d2
@@ -45,10 +45,12 @@ def bpa_round(in1, out1, in2, out2, pfunc1, pfunc2):
 
 def bpa_loop(in1, out1, in2, out2, pfunc1, pfunc2, max_iter, need_stop):
     for i in range(max_iter):
-        if (need_stop(in1)):
-            break
         bpa_round(in1, out1, in2, out2, pfunc1, pfunc2)
+        if need_stop(in2):
+            break
 
+# initialize beleif propagation message passing storage
+# from parity-check matrix H
 def bpa_init(H):
     incn = bpa_init_check(H)
     outcn = deepcopy(incn)
@@ -60,17 +62,18 @@ def bpa_init(H):
 def bpa_init_check(H):
     incheck = {}
     for i in range(len(H)):
-        if (i not in incheck):
+        if i not in incheck:
             incheck[i] = {}
         for j in range(len(H[i])):
-            if (H[i][j] != 0):
+            if H[i][j] != 0:
                 incheck[i][j] = 0
     return incheck
 
-
-
 def main():
-    print("Hello, World!")
+    H_arr = [[1, 1, 1, 0, 0],
+             [0, 1, 0, 1, 0],
+             [0, 1, 1, 0, 1]]
+    print(bpa_init(H_arr))
 
 if __name__ == '__main__':
     main()
