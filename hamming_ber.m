@@ -1,7 +1,8 @@
-[H, S_table] = hamming_15_11_tables();
+%[H, S_table] = hamming_15_11_tables();
+[H, S_table] = hamming_7_4_tables();
 
 % the plot was generated with maxRuns = 1e6
-maxRuns = 1e3;
+maxRuns = 1e4;
 EbN0sdB = -2:10;
 EbN0s = db2pow(EbN0sdB); % db
 
