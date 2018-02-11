@@ -3,3 +3,4 @@
 *.mat
 *.jpg
 *__pycache__*
+*.pyc

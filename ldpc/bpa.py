@@ -13,12 +13,13 @@ def slice_dict(adict):
 
 # no optimization of pfunc - copy each time
 # nd * (nd - 1) operations.
-def bpa_process(inbox, pfunc):
-    return { i : pfunc(i, inbox_slice) for i, inbox_slice in slice_dict(inbox).items() }
+def bpa_process(i, inbox, pfunc):
+    return { j : pfunc(i, inbox_slice) for j, inbox_slice in slice_dict(inbox).items() }
 
 def bpa_stage(inboxes, outboxes, pfunc):
     for i, inbox in inboxes.items():
-        outbox = bpa_process(inbox, pfunc)
+        outbox = bpa_process(i, inbox, pfunc)
+        #print(i, inbox, outbox)
         for dst, msg in outbox.items():
             outboxes[i][dst] = msg
 
@@ -38,8 +39,10 @@ def flipinit(d1):
 
 # one round of information exchange in a bipartite graph
 def bpa_round(in1, out1, in2, out2, pfunc1, pfunc2):
+    #print("CN update")
     bpa_stage(in1, out1, pfunc1)
     flipcopy(out1, in2)
+    #print("VN update")
     bpa_stage(in2, out2, pfunc2)
     flipcopy(out2, in1)
 

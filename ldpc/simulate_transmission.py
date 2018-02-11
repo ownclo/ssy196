@@ -13,8 +13,8 @@ def simulate_transmission(n, k, max_runs, encode, transmit, decode):
     word = np.zeros(n) # will always transmit all-zero codeword
 
     i = 0
-    while (i < max_runs or total_errors == 0):
-    #for i in range(max_runs):
+    #while (i < max_runs or total_errors == 0):
+    for i in range(round(max_runs)):
         c = encode(word)
         r = transmit(c)
         word_hat = decode(r)
