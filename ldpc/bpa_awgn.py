@@ -4,6 +4,7 @@ from misc import is_codeword, db2pow, last_k
 from simulate_transmission import simulate_transmission
 import bawgn
 import maximum_likelihood as ml
+import bcjr
 
 import numpy as np
 import scipy.io
@@ -50,13 +51,6 @@ def cn_update_min(llrs):
     sign = np.prod(np.sign(llrs))
     val = np.min(np.abs(llrs))
     return sign * val
-
-def decide_from_llrs(llrs):
-    return np.array([decide_from_llr(llr) for llr in llrs])
-
-def decide_from_llr(llr):
-    if llr == 0: return 0 if random() > 0 else 1
-    else: return 1 if llr < 0 else 0
 
 def total_bpa_llr(llrs_ch, invn):
     out_llrs = llrs_ch.copy()
@@ -110,23 +104,23 @@ def decode_bpa(msg_store, llrs_ch, max_iter, H):
 
 # simulate BPA for Hamming code over BI-AWGN
 def simulate_bpa_awgn():
-    H = [[0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-         [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
-         [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-         [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
-         [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
-         [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0]]
+    #H = [[0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+    #     [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+    #     [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    #     [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
+    #     [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+    #     [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0]]
     #n = 21
     #k = 12
 
-    #H = [[1, 0, 0, 1, 1, 0, 1],
-    #     [0, 1, 0, 1, 0, 1, 1],
-    #     [0, 0, 1, 0, 1, 1, 1]]
-    #n = 7
-    #k = 4
+    H = [[1, 0, 0, 1, 1, 0, 1],
+         [0, 1, 0, 1, 0, 1, 1],
+         [0, 0, 1, 0, 1, 1, 1]]
+    n = 7
+    k = 4
     Ha = np.array(H)
     n = Ha.shape[1]
     k = n - Ha.shape[0]
@@ -138,30 +132,35 @@ def simulate_bpa_awgn():
     #print(msg_store)
 
     # CW book
-    # cws = ml.all_codewords()
+    cws = ml.all_codewords()
+
+    # BCRJ trellis
+    trellis = bcjr.build_trellis(Ha)
 
     # max runs of simulations (number of words to be transmitted)
     max_runs = 1e7
-    snrDbs = np.arange(-2, 9)
+    snrDbs = np.arange(8, 9)
     bers = np.zeros(len(snrDbs))
     i = 0
     for snrDb in snrDbs:
         snr = db2pow(snrDb)
         sigma = bawgn.noise_sigma(snr, k / n)
 
-        decode = lambda r : decode_bpa_awgn(msg_store, r, Ha, sigma, max_iter)
+        #decode = lambda r : decode_bpa_awgn(msg_store, r, Ha, sigma, max_iter)
         #decode = lambda r : ml.decode_ml(cws, r)
         #decode = lambda r : decode_bpa_bec(msg_store, r, Ha, sigma, max_iter)
+        decode = lambda r : decide_from_llrs(bcjr.decode(r, trellis))
         ber = simulate_transmission(n, k, max_runs, bawgn.modulate, bawgn.transmit(sigma), decode)
 
         bers[i] = ber
         i += 1
         print(snrDb, ber)
     # save to mat file for plotting purposes
-    #scipy.io.savemat('ml_awgn_3', { 'ml_awgn_snrs_3' : snrDbs, 'ml_awgn_bers_3' : bers })
+    #scipy.io.savemat('ml_awgn_4', { 'ml_awgn_snrs_4' : snrDbs, 'ml_awgn_bers_4' : bers })
     #scipy.io.savemat('bpa_awgn_4', { 'bpa_awgn_snrs_4' : snrDbs, 'bpa_awgn_bers_4' : bers })
     #scipy.io.savemat('bpa_bec_2', { 'bpa_bec_snrs_2' : snrDbs, 'bpa_bec_bers_2' : bers })
-    scipy.io.savemat('bpa_awgn_h21', { 'bpa_awgn_snrs_h21' : snrDbs, 'bpa_awgn_bers_h21' : bers })
+    #scipy.io.savemat('bpa_awgn_h21', { 'bpa_awgn_snrs_h21' : snrDbs, 'bpa_awgn_bers_h21' : bers })
+    #scipy.io.savemat('bpa_awgn_bcjr', { 'bpa_awgn_snrs_bcjr' : snrDbs, 'bpa_awgn_bers_bcjr' : bers })
 
 
 def test_main():
