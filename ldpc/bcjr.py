@@ -13,7 +13,7 @@ from numpy import inf
 def channel_metric(rsym, tr_out, sigmasq):
     return np.dot(rsym, tr_out) / sigmasq
 
-def channel_metrics(r, trellis, sigmasq):
+def channel_metrics(r, trellis, sigmasq, llrs_prior):
     i = 0
     prevs, nexts = trellis
     rsymbols = np.reshape(r, (-1, len(prevs[0][0][0]['out'])))
@@ -23,7 +23,8 @@ def channel_metrics(r, trellis, sigmasq):
         for f, ts in nexts[len(nexts) - 1 - i].items():
             gammas[i][f] = {}
             for t, transition in ts.items():
-                gammas[i][f][t] = channel_metric(rsym, transition['out'], sigmasq)
+                adjust = llrs_prior[i] * transition['in'][0] * 0.5
+                gammas[i][f][t] = adjust + channel_metric(rsym, transition['out'], sigmasq)
         i += 1
     return gammas
 
@@ -71,10 +72,14 @@ def bit_llrs(alphas, betas, gammas, trellis):
 
     return llrs
 
-def decode(r, trellis):
-    sigmasq = 1.0
+def decode(r, trellis, sigma):
+    llrs_prior = np.zeros(len(r))
+    return decode_siso(r, trellis, sigma, llrs_prior)
+
+def decode_siso(r, trellis, sigma, llrs_prior):
+    sigmasq = sigma ** 2
     prevs, nexts = trellis
-    gammas = channel_metrics(r, trellis, sigmasq)
+    gammas = channel_metrics(r, trellis, sigmasq, llrs_prior)
     alphas = trellis_run(gammas, prevs)
     betas = np.flipud(trellis_run(flip(gammas), nexts))
     llrs = bit_llrs(alphas, betas, gammas, prevs)
@@ -139,7 +144,7 @@ def test_conv_trellis():
     betas = trellis_run(flip(gammas), nexts)
     betas_f = np.flipud(betas)
 
-    #llrs = decode(r, trellis)
+    #llrs = decode(r, trellis, 1.0)
     #rhat = decide_from_llrs(llrs)
 
     for i, k in gammas.items():
@@ -181,7 +186,7 @@ def test_block_trellis():
             print("SYM:", k, "TO:", t, "FROM:", f)
 
     r = [1.2, 0.6, -1.2, 0.0, -0.1]
-    llrs = decode(r, trellis)
+    llrs = decode(r, trellis, 1.0)
     rhat = decide_from_llrs(llrs)
     print(llrs)
     print(rhat)
