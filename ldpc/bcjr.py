@@ -8,6 +8,8 @@ from bpa_misc import decide_from_llrs
 
 import numpy as np
 from numpy import inf
+from collections import defaultdict
+from functools import reduce
 
 
 def channel_metric(rsym, tr_out, sigmasq):
@@ -52,9 +54,16 @@ def maxfun(vals):
     #return max(vals)
     return max_star(vals)
 
+def max_star_2(a, b):
+    maxval = max(a, b)
+    correction_term = 0 if a == -np.inf or b == -np.inf else np.log(1 + np.exp(-1 * np.abs(a - b)))
+    return maxval + correction_term
+
 def max_star(vals):
-    sum_exps = np.sum(np.exp(vals))
-    return -inf if sum_exps == 0.0 else np.log(sum_exps)
+    return reduce(max_star_2, vals)
+    #sum_exps = np.sum(np.exp(vals))
+    #print(vals, sum_exps)
+    #return -inf if sum_exps == 0.0 else np.log(sum_exps)
     #return np.log(sum_exps)
 
 def bit_llrs(alphas, betas, gammas, trellis):
@@ -128,10 +137,12 @@ def example_trellis():
             2 : { 0 : {'in' : [-1], 'out' : [-1, -1]}, 1 : {'in' : [-1], 'out' : [+1, +1]}},
             3 : { 2 : {'in' : [-1], 'out' : [+1, -1]}, 3 : {'in' : [-1], 'out' : [-1, +1]}}}
 
-    nxt = bpa.flipinit(prev)
+    return regular_trellis(prev)
 
-    prevs = [ prev for _ in range(5) ]
-    nexts = [ nxt for _ in range(5) ]
+def regular_trellis(prev):
+    nxt = bpa.flipinit(prev)
+    prevs = defaultdict(lambda: prev)
+    nexts = defaultdict(lambda: nxt)
     return prevs, nexts
 
 def test_conv_trellis():
@@ -139,7 +150,8 @@ def test_conv_trellis():
     prevs, nexts = trellis = example_trellis()
     r = [-0.7, -0.5, -0.8, -0.6, -1.1, 0.4, 0.9, 0.8, 0.0, -1.0]
 
-    gammas = channel_metrics(r, trellis, sigmasq)
+    llrs_prior = np.zeros(len(r))
+    gammas = channel_metrics(r, trellis, sigmasq, llrs_prior)
     alphas = trellis_run(gammas, prevs)
     betas = trellis_run(flip(gammas), nexts)
     betas_f = np.flipud(betas)
@@ -192,8 +204,8 @@ def test_block_trellis():
     print(rhat)
 
 def main():
-    #test_conv_trellis()
-    test_block_trellis()
+    test_conv_trellis()
+    #test_block_trellis()
 
 if __name__ == '__main__':
     main()

@@ -6,6 +6,8 @@ load('./ldpc/bpa_bec_2.mat')
 load('./ldpc/bpa_awgn_h21.mat')
 load('./ldpc/bpa_awgn_bcjr.mat')
 load('./ldpc/bpa_awgn_bcjr_2.mat')
+load('./ldpc/pccc_7_5.mat')
+load('./ldpc/pccc_7_5_punc_ref.mat')
 
 EbN0sdB = -2:10;
 hd_bers = bercoding(EbN0sdB, 'Hamming','hard', 7);
@@ -20,6 +22,10 @@ semilogy(EbN0sdB, hd_bers, '--.', 'LineWidth', 2); hold on;
 semilogy(bpa_awgn_snrs_h21, bpa_awgn_bers_h21, '-.', 'LineWidth', 2); hold on;
 semilogy(bpa_awgn_snrs_bcjr, bpa_awgn_bers_bcjr, '--*', 'LineWidth', 2); hold on;
 semilogy(bpa_awgn_snrs_bcjr_2, bpa_awgn_bers_bcjr_2, '--*', 'LineWidth', 2); hold on;
+semilogy(pccc_7_5_snrs, pccc_7_5_bers, '-*', 'LineWidth', 2); hold on;
+semilogy(pccc_7_5_snrs_punc_ref, pccc_7_5_bers_punc_ref, '--*', 'LineWidth', 2); hold on;
+semilogy(pccc_7_5_snrs_punc_ref, pccc_7_5_fers_punc_ref, '--*', 'LineWidth', 2); hold on;
+
 xlim([-2, 8]);
 grid minor
 

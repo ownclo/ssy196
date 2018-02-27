@@ -150,7 +150,7 @@ def simulate_bpa_awgn():
         #decode = lambda r : ml.decode_ml(cws, r)
         #decode = lambda r : decode_bpa_bec(msg_store, r, Ha, sigma, max_iter)
         decode = lambda r : decide_from_llrs(bcjr.decode(r, trellis, sigma))
-        ber = simulate_transmission(n, k, max_runs, bawgn.modulate, bawgn.transmit(sigma), decode)
+        ber = simulate_transmission(n, n, max_runs, bawgn.modulate, bawgn.transmit(sigma), decode)
 
         bers[i] = ber
         i += 1
@@ -160,7 +160,7 @@ def simulate_bpa_awgn():
     #scipy.io.savemat('bpa_awgn_4', { 'bpa_awgn_snrs_4' : snrDbs, 'bpa_awgn_bers_4' : bers })
     #scipy.io.savemat('bpa_bec_2', { 'bpa_bec_snrs_2' : snrDbs, 'bpa_bec_bers_2' : bers })
     #scipy.io.savemat('bpa_awgn_h21', { 'bpa_awgn_snrs_h21' : snrDbs, 'bpa_awgn_bers_h21' : bers })
-    scipy.io.savemat('bpa_awgn_bcjr_2', { 'bpa_awgn_snrs_bcjr_2' : snrDbs, 'bpa_awgn_bers_bcjr_2' : bers })
+    scipy.io.savemat('bpa_awgn_bcjr_3', { 'bpa_awgn_snrs_bcjr_3' : snrDbs, 'bpa_awgn_bers_bcjr_3' : bers })
 
 
 def test_main():

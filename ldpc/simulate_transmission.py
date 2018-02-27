@@ -6,10 +6,12 @@ from scipy.stats import norm
 import scipy.io
 
 
-def simulate_transmission(n, k, max_runs, encode, transmit, decode):
+def simulate_transmission(n, decoded_n, max_runs, encode, transmit, decode):
     max_errors = 500
+    max_frames_in_error = 7
     total_errors = 0.0
     total_bits = 0.0
+    frames_in_error = 0
     word = np.zeros(n) # will always transmit all-zero codeword
 
     i = 0
@@ -19,13 +21,23 @@ def simulate_transmission(n, k, max_runs, encode, transmit, decode):
         r = transmit(c)
         word_hat = decode(r)
         num_errors = weight(word_hat)  # if we've transmitted all-zero codeword
+        if num_errors > 0:
+            frames_in_error += 1
         total_errors += num_errors
-        total_bits += n
+        total_bits += decoded_n
         i += 1
-        if total_errors >= max_errors: break
+        if total_errors >= max_errors:
+            print("BER break")
+            break
+        if frames_in_error >= max_frames_in_error:
+            print("FER break")
+            break
+        if i % 100 == 0:
+            print("REPORT. i:", i, "frames_in_error:", frames_in_error, "total_errors:", total_errors, "FER:", frames_in_error / i, "BER:", total_errors / total_bits)
 
     ber = total_errors / total_bits
-    return ber
+    fer = frames_in_error / i
+    return ber, fer
 
 
 def weight(word):
