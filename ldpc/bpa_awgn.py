@@ -9,7 +9,6 @@ import bcjr
 import numpy as np
 import scipy.io
 from scipy.stats import norm
-from random import random
 
 
 def llr_awgn(y, sigmasq):

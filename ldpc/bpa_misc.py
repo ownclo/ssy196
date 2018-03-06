@@ -1,4 +1,5 @@
 import numpy as np
+from random import random
 
 def init_cn_inbox(r, incn, rfun):
     for i in range(len(r)):
@@ -10,5 +11,6 @@ def decide_from_llrs(llrs):
     return np.array([decide_from_llr(llr) for llr in llrs])
 
 def decide_from_llr(llr):
-    if llr == 0: return 0 if random() > 0 else 1
-    else: return 1 if llr < 0 else 0
+    #if llr == 0: return 0 if random() > 0 else 1
+    #else:
+        return 1 if llr < 0 else 0

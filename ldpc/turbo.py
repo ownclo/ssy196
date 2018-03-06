@@ -76,6 +76,18 @@ def __encode_conv_7_5(u, start_state):
         #print(state)
     return p, state
 
+def __encode_conv_7_1(u, start_state):
+    state = start_state.copy()
+    p = zeros(len(u))
+    for i in range(len(u)):
+        new_state = (u[i] + state[0] + state[1]) % 2
+        #p[i] = (state[1] + new_state) % 2
+        p[i] = new_state
+        state[1] = state[0]
+        state[0] = new_state
+        #print(state)
+    return p, state
+
 def flatten(u):
     return np.array(u).flatten(order='F')
 
@@ -180,7 +192,90 @@ def depuncture(r, k, punc1, punc2):
     #print(out)
     return flatten(out)
 
-def decode_pccc_7_9(r, k, sigma, max_iter, trellis, punc1, punc2):
+def depuncture1(r, k, punc1, punc2):
+    out = np.zeros((2, k))
+    j = 0
+    for i in range(k):
+        if not punc1(i):
+            out[0][i] = r[j]
+            j += 1
+        if not punc2(i):
+            out[1][i] = r[j]
+            j += 1
+    #print(out)
+    return flatten(out)
+
+# 3 Boolean Flags to BCJR: is_in, are_llrs_in, init_inf
+# - is_in - are llrs RETURNED for input bits or for output bits?
+# - are_llrs_in - are llrs PROVIDED for input bits or for output bits?
+# - init_inf - do we initialize decoder betas with -INF or with alphas?
+#
+# INNER DECODER - DECODER 1
+# - RETURN:   llrs for INPUT  => is_in       = True
+# - PROVIDED: llrs for INPUT  => are_llrs_in = True
+# - INIT:     betas as ALPHAs => init_inf    = False
+# OUTER DECODER - DECODER 2
+# - RETURN:   llrs for OUTPUT => is_in       = False
+# - PROVIDED: llrs for OUTPUT => are_llrs_in = False
+# - INIT:     betas as -INF   => init_inf    = True
+# LAST ITERATION - DECODER 2
+# - RETURN:   llrs for INPUT  => is_in       = True
+# - PROVIDED: llrs for OUTPUT => are_llrs_in = False
+# - INIT:     betas as -INF   => init_inf    = True
+def decode_sccc_7_5(r, k, sigma, max_iter, trellis1, trellis2):
+    sigmasq = sigma ** 2
+    #len_r = len(r) // 2
+    len_r = len(r)
+
+    #perm = np.arange(len_r) # XXX: NO interleaving
+    perm = rand_interleaver(len_r)
+    inv_perm = deinterleaver(perm)
+
+    llrs_21 = np.zeros(len_r)
+
+    prev_signs = zeros(len_r)
+    llr_threshold = 10
+    #print(len_r, k)
+    r1 = depuncture1(r, k * 2, even_puncturer(), odd_puncturer())
+    r2 = np.zeros(len_r) # outer decoder is not connected to the channel
+    for i in range(max_iter):
+        # we do not terminate the trellis, but for all-zero codeword, we can assume that we do
+        #r1 = flatten(np.array([np.zeros(len_r), r]))
+        #print("FIRST DECODER")
+        #llrs_1 = bcjr.decode_siso(r, trellis1, sigma, llrs_21, True, True, True)
+        llrs_1 = bcjr.decode_siso(r1, trellis1, sigma, llrs_21, True, True, True)
+        #print(len_r, len(llrs_1))
+        llrs_12 = llrs_1 - llrs_21
+        print(llrs_12[len(llrs_12) // 2])
+
+        #print("SECOND DECODER")
+        llrs_12_p = interleave(llrs_12, inv_perm)
+        llrs_2 = bcjr.decode_siso(r2, trellis2, sigma, llrs_12_p, False, False, True)
+        llrs_21_permuted = llrs_2 - llrs_12_p
+        llrs_21 = interleave(llrs_21_permuted, perm)
+
+        #total_llrs = llrs_1
+        total_llrs = llrs_2
+        signs = np.sign(total_llrs)
+        if np.array_equal(signs, prev_signs) and np.all(np.abs(total_llrs) > llr_threshold):
+            # assume that if signs of llrs are not changing and amplitude is big enough
+            # then the decision will not change
+            print("BREAK!")
+            break
+        prev_signs = signs
+        #print(np.array([llrs_1, llrs_2, llrs_12, llrs_21]))
+        #print(np.array([llrs_1, total_llrs]))
+        #print(np.sign(total_llrs))
+
+    #print(np.mean(llrs_1[0:100]), np.mean(llrs_1[1900:2000]))
+    llrs_infbits = bcjr.decode_siso(r2, trellis2, sigma, llrs_12_p, True, False, True)
+    #print(np.array_equal(llrs_infbits, total_llrs[::2]))
+    return llrs_infbits
+    #print(total_llrs)
+    #return total_llrs
+
+
+def decode_pccc_7_5(r, k, sigma, max_iter, trellis, punc1, punc2):
     sigmasq = sigma ** 2
     perm = rand_interleaver(k)
     inv_perm = deinterleaver(perm)
@@ -195,12 +290,12 @@ def decode_pccc_7_9(r, k, sigma, max_iter, trellis, punc1, punc2):
     llr_threshold = 10
     for i in range(max_iter):
         r1 = flatten(np.array([sys, par1]))
-        llrs_1 = bcjr.decode_siso(r1, trellis, sigma, llrs_21)
+        llrs_1 = bcjr.decode_siso(r1, trellis, sigma, llrs_21, True, True, True)
         llrs_12 = llrs_1 - llrs_21 - sys_llr
 
         r2 = flatten(np.array([interleave(sys, perm), par2]))
         llrs_12_p = interleave(llrs_12, perm)
-        llrs_2 = bcjr.decode_siso(r2, trellis, sigma, llrs_12_p)
+        llrs_2 = bcjr.decode_siso(r2, trellis, sigma, llrs_12_p, True, True, True)
         llrs_21_permuted = llrs_2 - llrs_12_p - sys_llr_perm
         llrs_21 = interleave(llrs_21_permuted, inv_perm)
         total_llrs = interleave(llrs_2, inv_perm)
@@ -215,20 +310,36 @@ def decode_pccc_7_9(r, k, sigma, max_iter, trellis, punc1, punc2):
 
     return total_llrs
 
-def simulate_pccc_7_5():
-    # BCRJ trellises for component codes
-    trellis = build_5_7_trellis()
-    punc1 = odd_puncturer()
-    punc2 = even_puncturer()
+def simulate_turbo_7_5():
+    ## PCCC
+    #trellis = build_5_7_trellis(True)
+    #punc1 = odd_puncturer()
+    #punc2 = even_puncturer()
+    #rate = 1/2
+    #punc1 = no_puncturer()
+    #punc2 = no_puncturer()
 
-    max_runs = 1e5
+    ## SCCC
+    #trellis1 = build_acc_trellis()
+    #trellis1 = build_7_1_trellis(False)
+    #trellis1 = trellis_7_5_nonsys()
+    trellis1 = build_7_5_trellis(True)
+    #trellis1 = build_7_5_trellis(False) # rate-1 INNER ENCODER TRELLIS - NON-SYSTEMATIC
+    trellis2 = build_7_5_trellis(True)  # rate-1/2 OUTER ENCODER TRELLIS - SYSTEMATIC
+    #rate = 1
+    #rate = 1 / 4
+    rate = 1 / 2
+
+    max_runs = 1e4
     max_iter = 8
     k = 1000
-    rate = 1/2
+    #k = 128
     n = int(k / rate)
 
-    snrDbs = np.arange(1, 4)
-    snrDbs = [1, 1.5, 2, 2.5, 3]
+    #snrDbs = np.arange(2, 5)
+    snrDbs = [0.5, 1, 1.5, 1.8, 2, 2.2, 2.5, 2.7, 3.0, 3.5]
+    #snrDbs = [2.4]
+    #snrDbs = [4,5,6,7,8,9]
     bers = np.zeros(len(snrDbs))
     fers = np.zeros(len(snrDbs))
     i = 0
@@ -236,7 +347,8 @@ def simulate_pccc_7_5():
         snr = db2pow(snrDb)
         sigma = bawgn.noise_sigma(snr, rate)
 
-        decode = lambda r : decide_from_llrs(decode_pccc_7_9(r, k, sigma, max_iter, trellis, punc1, punc2))
+        #decode = lambda r : decide_from_llrs(decode_pccc_7_5(r, k, sigma, max_iter, trellis, punc1, punc2))
+        decode = lambda r : decide_from_llrs(decode_sccc_7_5(r, k, sigma, max_iter, trellis1, trellis2))
         ber, fer = simulate_transmission(n, k, max_runs, bawgn.modulate, bawgn.transmit(sigma), decode)
 
         bers[i] = ber
@@ -245,13 +357,13 @@ def simulate_pccc_7_5():
         print(snrDb, ber, fer)
 
     # save to mat file for plotting purposes
-    scipy.io.savemat('pccc_7_5_punc_ref', {
-        'pccc_7_5_snrs_punc_ref' : snrDbs,
-        'pccc_7_5_bers_punc_ref' : bers,
-        'pccc_7_5_fers_punc_ref' : fers
+    scipy.io.savemat('sccc_7_5_fancypunc', {
+        'sccc_7_5_fancypunc_snrs' : snrDbs,
+        'sccc_7_5_fancypunc_bers' : bers,
+        'sccc_7_5_fancypunc_fers' : fers
         })
 
-def build_5_7_trellis():
+def build_7_5_trellis(is_systematic):
     nxt = {}
     numbits = 2
     states = [[0,0],[0,1],[1,0],[1,1]]
@@ -262,14 +374,55 @@ def build_5_7_trellis():
         for b in inputs:
             [out], t = __encode_conv_7_5([b], f)
             tbit = bcjr.bi2de(t, numbits)
-            nxt[fbit][tbit] = { 'in' : list(bawgn.modulate([b])), 'out' : list(bawgn.modulate([b, out])) }
+            output = [b, out] if is_systematic else [out]
+            nxt[fbit][tbit] = { 'in' : list(bawgn.modulate([b])), 'out' : list(bawgn.modulate(output)) }
+            #print("FROM:", f, "IN:", b, "OUT:", out, "TO:", t)
+    print(nxt)
+    nexts, prevs = bcjr.regular_trellis(nxt)
+    return prevs, nexts
+
+def trellis_7_5_nonsys():
+    nxt = { 0 : {0: {'in' : [+1], 'out' : [+1]}, 2: {'in' : [-1], 'out': [-1]}},
+            1 : {0: {'in' : [-1], 'out' : [-1]}, 2: {'in' : [+1], 'out': [+1]}},
+            2 : {1: {'in' : [-1], 'out' : [+1]}, 3: {'in' : [+1], 'out': [-1]}},
+            3 : {1: {'in' : [+1], 'out' : [-1]}, 3: {'in' : [-1], 'out': [+1]}}}
+    nexts, prevs = bcjr.regular_trellis(nxt)
+    return prevs, nexts
+
+def build_7_1_trellis(is_systematic):
+    nxt = {}
+    numbits = 2
+    states = [[0,0],[0,1],[1,0],[1,1]]
+    inputs = [0,1]
+    for f in states:
+        fbit = bcjr.bi2de(f, numbits)
+        if fbit not in nxt: nxt[fbit] = {}
+        for b in inputs:
+            [out], t = __encode_conv_7_1([b], f)
+            tbit = bcjr.bi2de(t, numbits)
+            output = [b, out] if is_systematic else [out]
+            nxt[fbit][tbit] = { 'in' : list(bawgn.modulate([b])), 'out' : list(bawgn.modulate(output)) }
             #print("FROM:", f, "IN:", b, "OUT:", out, "TO:", t)
     #print(nxt)
     nexts, prevs = bcjr.regular_trellis(nxt)
     return prevs, nexts
 
-def test_build_5_7_trellis():
-    prevs, nexts = build_5_7_trellis()
+def build_acc_trellis():
+    nxt = { 0 : { 0 : { 'in' : [+1], 'out' : [+1] }, 1 : { 'in' : [-1], 'out' : [-1] } },
+            1 : { 0 : { 'in' : [-1], 'out' : [+1] }, 1 : { 'in' : [+1], 'out' : [-1] } } }
+    nexts, prevs = bcjr.regular_trellis(nxt)
+    return prevs, nexts
+
+def test_build_7_5_trellis():
+    print("SYSTEMATIC")
+    prevs, nexts = build_7_5_trellis(True)
+    print("NEXTS")
+    [ print("FROM:", f, "IN:", spec['in'], "OUT:", spec['out'], "TO:", t) for f, ts in nexts[0].items() for t, spec in ts.items() ]
+    print("PREVS")
+    [ print("TO:", f, "IN:", spec['in'], "OUT:", spec['out'], "FROM:", t) for f, ts in prevs[0].items() for t, spec in ts.items() ]
+
+    print("NONSYSTEMATIC")
+    prevs, nexts = build_7_5_trellis(False)
     print("NEXTS")
     [ print("FROM:", f, "IN:", spec['in'], "OUT:", spec['out'], "TO:", t) for f, ts in nexts[0].items() for t, spec in ts.items() ]
     print("PREVS")
@@ -290,14 +443,22 @@ def test_puncturers():
     r_dep = depuncture(r, k, punc1, punc2)
     print(r_dep)
 
+    r = np.array([1,2,3,4,5,6])
+    k = 6
+    punc1 = odd_puncturer()
+    punc2 = even_puncturer()
+    r_dep = depuncture1(r, k, punc1, punc2)
+
+    print(r_dep)
+
 def main():
     #test_conv_encoder() # R7.1
     #test_build_5_7_trellis()
     #test_interleaver() # R7.3 interleaver
     #test_pccc_encoder() # R7.3 PCCC encoding
     #test_search_pccc_weightspectrum() # R7.4
-    #test_puncturers()
-    simulate_pccc_7_5() # P14
+    test_puncturers()
+    simulate_turbo_7_5() # P14
 
 if __name__ == '__main__':
     main()

@@ -15,18 +15,29 @@ from functools import reduce
 def channel_metric(rsym, tr_out, sigmasq):
     return np.dot(rsym, tr_out) / sigmasq
 
-def channel_metrics(r, trellis, sigmasq, llrs_prior):
+def num_out(trellis):
+    return len(trellis[0][0][0]['out'])
+
+# are_llrs_in indicates whether llrs_prior are llrs on input or output bits.
+def channel_metrics(r, trellis, sigmasq, llrs_prior, are_llrs_in):
     i = 0
     prevs, nexts = trellis
-    rsymbols = np.reshape(r, (-1, len(prevs[0][0][0]['out'])))
+    nout = num_out(prevs)
+    nllrs = 1 if are_llrs_in else nout
+    rsymbols = np.reshape(r, (-1, nout))
     gammas = {}
     for rsym in rsymbols:
+        #print(rsym)
         gammas[i] = {}
+        l = llrs_prior[nllrs * i : nllrs * (i + 1)]
+        #print(nllrs * i, nllrs * (i + 1), l)
+        spec = 'in' if are_llrs_in else 'out'
         for f, ts in nexts[len(nexts) - 1 - i].items():
             gammas[i][f] = {}
             for t, transition in ts.items():
-                adjust = llrs_prior[i] * transition['in'][0] * 0.5
-                gammas[i][f][t] = adjust + channel_metric(rsym, transition['out'], sigmasq)
+                adjust = np.dot(l, transition[spec]) * 0.5
+                ch_metric = channel_metric(rsym, transition['out'], sigmasq)
+                gammas[i][f][t] = adjust + ch_metric
         i += 1
     return gammas
 
@@ -36,11 +47,15 @@ def flip(channel_mtrx):
         flipped[len(channel_mtrx) - 1 - i] = bpa.flipinit(channel_mtrx[i])
     return flipped
 
-def trellis_run(gammas, trellis):
+def trellis_run(gammas, trellis, init_inf, orig):
     cum_metrics = np.zeros((len(gammas) + 1, len(trellis[0]))) # (num symbols + first state) x num states
 
-    for j in np.arange(1, len(trellis[0])):
-        cum_metrics[0][j] = -inf
+    if init_inf:
+        for j in np.arange(1, len(trellis[0])):
+            cum_metrics[0][j] = -inf
+    else:
+        #print(orig[-1])
+        cum_metrics[0] = orig[-1]
 
     for i in np.arange(1, len(gammas) + 1):
         for j in range(len(trellis[0])):
@@ -66,32 +81,48 @@ def max_star(vals):
     #return -inf if sum_exps == 0.0 else np.log(sum_exps)
     #return np.log(sum_exps)
 
-def bit_llrs(alphas, betas, gammas, trellis):
+def bit_llrs(alphas, betas, gammas, trellis, is_in):
     num_symbols = len(gammas)
-    llrs = np.zeros(num_symbols)
+    nout = 1 if is_in else num_out(trellis)
+    num_llrs = num_symbols * nout
+    llrs = np.zeros(num_llrs)
 
-    for i in np.arange(num_symbols):
-        tr_plus  = [ (f, t) for t, v in trellis[i].items() for f, spec in v.items() if spec['in'] == [+1] ]
-        tr_minus = [ (f, t) for t, v in trellis[i].items() for f, spec in v.items() if spec['in'] == [-1] ]
+    for i in range(num_symbols):
+        for j in range(nout):
+            s = 'in' if is_in else 'out'
+            tr_plus  = [ (f, t) for t, v in trellis[i].items() for f, spec in v.items() if spec[s][j] == +1 ]
+            tr_minus = [ (f, t) for t, v in trellis[i].items() for f, spec in v.items() if spec[s][j] == -1 ]
 
-        v_plus  = maxfun([ alphas[i][f] + gammas[i][f][t] + betas[i+1][t] for f, t in tr_plus  ])
-        v_minus = maxfun([ alphas[i][f] + gammas[i][f][t] + betas[i+1][t] for f, t in tr_minus ])
+            v_plus  = maxfun([ alphas[i][f] + gammas[i][f][t] + betas[i+1][t] for f, t in tr_plus  ])
+            v_minus = maxfun([ alphas[i][f] + gammas[i][f][t] + betas[i+1][t] for f, t in tr_minus ])
 
-        llrs[i] = v_plus - v_minus
+            llrs[i * nout + j] = v_plus - v_minus
 
     return llrs
 
 def decode(r, trellis, sigma):
     llrs_prior = np.zeros(len(r))
-    return decode_siso(r, trellis, sigma, llrs_prior)
+    return decode_siso(r, trellis, sigma, llrs_prior, True, False, True)
 
-def decode_siso(r, trellis, sigma, llrs_prior):
+def decode_siso(r, trellis, sigma, llrs_prior, is_in, are_llrs_in, init_inf):
     sigmasq = sigma ** 2
     prevs, nexts = trellis
-    gammas = channel_metrics(r, trellis, sigmasq, llrs_prior)
-    alphas = trellis_run(gammas, prevs)
-    betas = np.flipud(trellis_run(flip(gammas), nexts))
-    llrs = bit_llrs(alphas, betas, gammas, prevs)
+    gammas = channel_metrics(r, trellis, sigmasq, llrs_prior, are_llrs_in)
+    #print("g0:", gammas[0])
+    #print("g1:", gammas[1])
+    #print("g2:", gammas[2])
+    #print("g3:", gammas[3])
+    #print("gmid:", gammas[len(gammas) // 2])
+    alphas = trellis_run(gammas, prevs, True, None)
+    #print("alpha05:", alphas[0:5])
+    #print("alphamid:", alphas[len(alphas) // 2])
+    betas = np.flipud(trellis_run(flip(gammas), nexts, init_inf, alphas))
+    llrs = bit_llrs(alphas, betas, gammas, prevs, is_in)
+    #print("beta05:", betas[0:5])
+    #print("betamid:", betas[len(betas) // 2])
+    #print("llr05:", llrs[0:5])
+    #print("llrmid:", llrs[len(llrs) // 2])
+    #sys.exit(-1)
     #print(alphas)
     #print(betas)
     return llrs
@@ -148,12 +179,13 @@ def regular_trellis(prev):
 def test_conv_trellis():
     sigmasq = 1.0
     prevs, nexts = trellis = example_trellis()
-    r = [-0.7, -0.5, -0.8, -0.6, -1.1, 0.4, 0.9, 0.8, 0.0, -1.0]
+    #r = [-0.7, -0.5, -0.8, -0.6, -1.1, 0.4, 0.9, 0.8, 0.0, -1.0]
+    r = [0.0,  -0.5, 0.0,  -0.6, 0.0,  0.4, 0.0, 0.8, 0.0, -1.0]
 
     llrs_prior = np.zeros(len(r))
-    gammas = channel_metrics(r, trellis, sigmasq, llrs_prior)
-    alphas = trellis_run(gammas, prevs)
-    betas = trellis_run(flip(gammas), nexts)
+    gammas = channel_metrics(r, trellis, sigmasq, llrs_prior, True)
+    alphas = trellis_run(gammas, prevs, True, None)
+    betas = trellis_run(flip(gammas), nexts, True, None)
     betas_f = np.flipud(betas)
 
     #llrs = decode(r, trellis, 1.0)
@@ -169,7 +201,7 @@ def test_conv_trellis():
     print(betas)
     print(betas_f)
 
-    llrs = bit_llrs(alphas, betas_f, gammas, prevs)
+    llrs = bit_llrs(alphas, betas_f, gammas, prevs, False)
     rhat = decide_from_llrs(llrs)
 
     #for k, v in prev.items():
@@ -178,6 +210,8 @@ def test_conv_trellis():
     #    print("NEXT ", k, v)
     #print(r)
 
+    print(bit_llrs(alphas, betas_f, gammas, prevs, True))
+    print(decide_from_llrs(bit_llrs(alphas, betas_f, gammas, prevs, True)))
     print(llrs)
     print(rhat)
 

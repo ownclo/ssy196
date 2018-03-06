@@ -23,6 +23,7 @@ def simulate_transmission(n, decoded_n, max_runs, encode, transmit, decode):
         num_errors = weight(word_hat)  # if we've transmitted all-zero codeword
         if num_errors > 0:
             frames_in_error += 1
+            print(np.array([i for i in range(len(word_hat)) if word_hat[i] != 0]))
         total_errors += num_errors
         total_bits += decoded_n
         i += 1
