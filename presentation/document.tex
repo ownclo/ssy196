@@ -1,0 +1,119 @@
+%==============================================================
+% 1-2 minutes per slide
+%==============================================================
+% document class and theme <<<
+%==============================================================
+\documentclass[
+	%serif,						% uses the standard LaTeX font (not recommended)
+	9pt,							% font size
+	mathserif, 				% uses the standard LaTeX font for math
+	%draft, 					% consider using this for speed
+	handout, 				% remove the overlays
+	%compress,
+]{beamer}
+
+\usepackage{etex}   % avoids a nasty 'no room for another \dimen' error
+
+\usetheme[%
+	noboldtitle,      		% set the frametitle / subtitle with bold font
+	footline=authortitle,	% include the author and title in the footline
+	shadow=true 					% include a visual shadow effect for the boxes
+]{Chalmers}	% dictates how everything should look
+
+\setbeamertemplate{navigation symbols}{} % off by default
+\setbeamerfont{section in head/foot}{size=\scriptsize}
+
+\newcommand{\backupbegin}{%
+	\newcounter{finalframe}%
+	\setcounter{finalframe}{\value{framenumber}}%
+}%
+
+\newcommand{\backupend}{%
+	\setcounter{framenumber}{\value{finalframe}}%
+}%
+
+% New commands and operators
+
+
+% >>>
+%==============================================================
+%	packages <<<
+%==============================================================
+% packages that are already loaded by the theme
+% 	- xcolor
+% 	- graphicx
+% 	- tikz
+% 	- pgf
+% 	- textpos
+%
+% whatever is needed
+\input{packages}
+\input{./fig/plots_and_diagrams}
+\input{commands}
+% >>>
+%==============================================================
+% setup <<<
+%==============================================================
+
+\renewcommand{\emph}[1]{\textbf{\textit{#1}}}
+
+% >>>
+%============================================================== 
+%	title, author, etc. <<< 
+%==============================================================
+% The names in square brackets are used in the footlines
+
+\title[The Area Property for EXIT Charts]{ {\huge The Area Property for EXIT Charts}}
+%\title[The Area Property for EXIT Charts]{ {\huge The Area Property for\\[3pt] Nonlinear Fourier Transform Transmission}}
+
+%\author[A. Buchberger, A. Graell i Amat, V. Aref, and L. Schmalen]
+%	{Andreas Buchberger, Alexandre Graell i Amat,\\[0.2em] Vahid Aref, and Laurent Schmalen}
+\author[R. Sokolovskii]{Roman Sokolovskii}
+
+
+\institute{
+	\emph{\href{mailto:roman.sokolovskii@chalmers.se}{roman.sokolovskii@chalmers.se}}
+	}
+
+\date{March 27, 2018}
+
+
+\begin{document}
+
+\begin{frame}[plain]
+\titlepage % Print the title page as the first slide
+\end{frame}
+
+\begin{frame}{Motivation}
+	\begin{itemize}
+		\item Modern communication systems can perform close to capacity.\\~
+		\item For uniformly distributed data, a gap to capacity remains.\\~
+		\item In general, the capacity-achieving distribution is not the uniform distribution.\\~
+		\item This gap to capacity can be closed by shaping.\\~
+		\item Apply shaping to an NFT-based transmission system.\\~
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{In This Paper}
+\begin{alertblock}{In this paper}
+\begin{itemize}
+	\item we propose an NFT transmission scheme exploiting the pulse duration.
+	\item we calculate the capacity-achieving input distribution.
+	\item we demonstrate the need for shaping.
+	\item we introduce probabilistic eigenvalue shaping (PES).
+	\item we perform simulations to confirm the improvement.
+	
+\end{itemize}
+\end{alertblock}
+
+\vskip 0.25cm
+
+\begin{block}{Result}
+	\begin{itemize}
+	\item Probabilistic eigenvalue shaping shows significant performance gains over an unshaped system.
+	\end{itemize}
+\end{block}
+
+\end{frame}
+
+\end{document}

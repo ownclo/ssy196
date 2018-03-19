@@ -1,0 +1,19 @@
+In software engineering version control is an essential tool to track changes, maintain backups and manage teams working on the same files.
+The same concepts can be transferred to academia and used for managing e.g., Latex code and figures of papers, code for simualtion frameworks, measurement data,
+and basically and other digital data. 
+In this tutorial-style seminar, the basic concepts of version control tools are introduced and a demonstration
+with the possibility to participate is given.
+
+If you want to participate in the demonstration, please complete the following steps beforehand (Note: It is of course possible to only watch!):
+1. Send me (andreas.buchberger@chalmers.se) an email that you would lik to participate.
+2. Accept the invitation to a shared Dropbox folder. Do NOT edit anything in there.
+3. Install the Dropbox client to continously synchronize your loval copy of the shared folder.
+4. Download and install git.
+	3.1 Debian/Ubuntu: sudo apt-get install git
+	3.2 Other Linux distributions see: https://git-scm.com/download/linux
+	3.3 Mac: https://git-scm.com/download/mac
+	3.4	Windows: https://git-scm.com/download/win
+5. Bring your computer to the seminar.
+
+
+

@@ -1,0 +1,48 @@
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{pgfplots}
+\usepackage{multirow}
+
+\usepackage{siunitx}
+
+\usepackage{setspace,graphicx}
+
+%\usepackage[pdfauthor={Andreas Buchberger},
+            %pdftitle={Probabilistic Eigenvalue Shaping for Nonlinear Fourier Transform Transmission},
+            %pdfsubject={},
+            %pdfkeywords={},
+            %pdfproducer={Latex with hyperref},
+            %pdfcreator={pdflatex},
+						%colorlinks=true,
+						%bookmarks=true,
+						%citecolor=blue,
+						%urlcolor=blue
+						%]{hyperref}
+
+
+\usetikzlibrary{arrows, positioning, shapes, calc}
+\usepgfplotslibrary{fillbetween, groupplots}
+\pgfplotsset{
+	legend image code/.code={
+		\draw[mark repeat=2,mark phase=2]
+			plot coordinates {
+				(0cm,0cm)
+				(0.18cm,0cm)        %% default is (0.3cm,0cm)
+				(0.36cm,0cm)         %% default is (0.6cm,0cm)
+			};%
+	}
+}
+\pgfplotsset{every tick label/.append style={font=\scriptsize}}
+
+\definecolor{color3}{RGB}{95,0,131}
+\definecolor{color1}{RGB}{255,77,0}
+\definecolor{color2}{RGB}{0,171,74}
+
+
+
+

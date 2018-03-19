@@ -1,0 +1,51 @@
+git config --global user.name "Jane Doe"
+git config --global user.email "jane.doe@nobody.se"
+
+git init --bare
+
+git clone /path/to/the/shared/dropbox/folder/
+
+% create a text file
+git add *
+git commit -m "First commit"
+git push
+
+% All others and observe:
+git fetch
+
+% Add a line to the text file
+git add *
+git commit -m "second commit"
+git push
+
+% Add another line to the text file
+git add *
+git commit -m "third commit"
+git push
+
+% Add another file
+git add *
+git commit -m "added another file"
+git push
+
+git revert HEAD~2
+
+git branch feature
+git checkout feature
+
+% create a feature file
+commit -a -m "created feature file"
+% change some crap
+commit -a -m "implemented feature file"
+commit -a -m "corrected feature file"
+
+git checkout master
+
+%some bugfixe
+commit -a -m "corrected feature in main file"
+
+git merge master feature
+
+
+
+

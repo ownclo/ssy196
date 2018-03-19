@@ -1,0 +1,37 @@
+%% Define colors for curves
+\definecolor{curve_color01}{HTML}{000000}
+\definecolor{curve_color02}{RGB}{239,138,98}
+\definecolor{curve_color03}{RGB}{103,169,207}
+\definecolor{curve_color04}{RGB}{33,102,172}
+\definecolor{curve_color05}{RGB}{178,24,43}
+\definecolor{curve_color06}{RGB}{253,219,199}
+
+\definecolor{color_weak_black}{RGB}{20,20,20}
+
+
+
+%% Define colors and shapes for block diagrams
+\definecolor{block_gray}{RGB}{204,204,204}
+\definecolor{block_background_gray}{RGB}{240,240,240}
+\definecolor{block_background_line_gray}{RGB}{175,175,175}
+
+\tikzstyle{line}=[draw, thick]
+\tikzstyle{arrow}=[draw, -latex, thick, midway] 
+\tikzstyle{block} = [rectangle, draw, thick, fill=block_gray, 
+    text width=2.75em, text centered, rounded corners, minimum height=1.75em]
+\tikzstyle{channel} = [cloud, draw,thick, cloud puffs=12, cloud puff arc=120, aspect=2, fill=block_gray]
+
+
+
+\tikzstyle{block_background} = [rectangle, draw, align=center, thick, draw=block_background_line_gray, fill=block_background_gray, rounded corners]
+
+
+%\usetikzlibrary{external}
+%\tikzset{external/system call={pdflatex \tikzexternalcheckshellescape 
+                                        %-halt-on-error
+                                        %-interaction=batchmode 
+                                        %-jobname "\image" "\texsource"
+                                        %&& pdftops -eps "\image.pdf"}}
+%
+%\tikzexternalize[shell escape=-enable-write18]
+

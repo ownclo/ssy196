@@ -1,0 +1,232 @@
+\usepackage{tikz}
+\usepackage{pgfkeys}
+\usetikzlibrary{patterns}
+\usetikzlibrary{shapes,arrows,positioning}
+\usetikzlibrary{shapes.callouts,shapes.arrows}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{calc}
+\usetikzlibrary{fit}
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{spy}
+
+
+\tikzset{new spy style/.style={spy scope={ magnification=5, size=1cm,  connect spies, every spy on node/.style={rectangle,  draw,  }, every spy in node/.style={ draw,  rectangle,  fill=white,   }  } }}
+\tikzset{every picture/.style={font issue=\scriptsize, >=stealth},font issue/.style={execute at begin picture={#1\selectfont}}}
+\tikzset{three sided left/.style={
+        draw=none,
+        xshift=\pgflinewidth,
+        append after command={
+            [shorten <= -0.5\pgflinewidth]
+            ([shift={(-1.5\pgflinewidth,-0.5\pgflinewidth)}]\tikzlastnode.north east) edge ([shift={( 0.5\pgflinewidth,-0.5\pgflinewidth)}]\tikzlastnode.north west) 
+            ([shift={( 0.5\pgflinewidth,-0.5\pgflinewidth)}]\tikzlastnode.north west) edge ([shift={( 0.5\pgflinewidth,+0.5\pgflinewidth)}]\tikzlastnode.south west)            
+            ([shift={( 0.5\pgflinewidth,+0.5\pgflinewidth)}]\tikzlastnode.south west) edge ([shift={(-1.0\pgflinewidth,+0.5\pgflinewidth)}]\tikzlastnode.south east)
+        }}}
+        
+\tikzset{three sided right/.style={
+        draw=none,
+        xshift=-\pgflinewidth,
+        append after command={
+            [shorten <= -0.5\pgflinewidth]
+            ([shift={( 1.5\pgflinewidth,-0.5\pgflinewidth)}]\tikzlastnode.north west) edge ([shift={(-0.5\pgflinewidth,-0.5\pgflinewidth)}]\tikzlastnode.north east) 
+            ([shift={(-0.5\pgflinewidth,-0.5\pgflinewidth)}]\tikzlastnode.north east) edge ([shift={(-0.5\pgflinewidth,+0.5\pgflinewidth)}]\tikzlastnode.south east)            
+            ([shift={(-0.5\pgflinewidth,+0.5\pgflinewidth)}]\tikzlastnode.south east) edge ([shift={( 1.0\pgflinewidth,+0.5\pgflinewidth)}]\tikzlastnode.south west)
+        }}}
+        
+\newcommand{\drawdimline}[2]{\draw [|<->|] ($(#1)+(-0.5\pgflinewidth,0)$)--($(#2) + (0.5\pgflinewidth,0)$)}        
+        
+%\newcommand\dimarr[3][]{ \draw[dimarr, |<->|] (#1) -- (#2) node[midway,below]{#3}; }  
+
+
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{fillbetween}
+\pgfplotsset{
+  compat=newest, % Allows drawing of circles.
+  width=0.645*0.6\columnwidth,    %0.86\columnwidth,  
+  height=0.45*0.6\columnwidth,   %0.60\columnwidth, 
+  plot coordinates/math parser=false,
+  standard/.style={
+    axis equal,
+    axis line style=help lines,
+    axis x line=center,
+    axis y line=center,
+    axis z line=center},
+    grid style={dashed,gray},
+    minor grid style={dotted,gray},
+    major grid style={dotted,gray},
+    ylabel absolute, ylabel style={yshift=-0.4cm},
+    xlabel absolute, xlabel style={yshift=0.25cm}
+}
+
+\makeatletter
+ \pgfdeclarepatternformonly[\tikz@pattern@color,\LineSpace,\LineWidth]{my horizontal lines}%
+    {\pgfpointorigin}{\pgfqpoint{100pt}{1pt}}{\pgfqpoint{100pt}{\LineSpace}}%
+    {
+        \pgfsetcolor{\tikz@pattern@color}
+        \pgfsetlinewidth{\LineWidth}
+        \pgfpathmoveto{\pgfqpoint{0pt}{0.5pt}}
+        \pgfpathlineto{\pgfqpoint{100pt}{0.5pt}}
+        \pgfusepath{stroke}
+    }
+ 
+ \pgfdeclarepatternformonly[\tikz@pattern@color,\LineSpace,\LineWidth]{my vertical lines}%
+    {\pgfpointorigin}{\pgfqpoint{1pt}{100pt}}{\pgfqpoint{\LineSpace}{100pt}}%
+    {
+        \pgfsetcolor{\tikz@pattern@color}
+        \pgfsetlinewidth{\LineWidth}
+        \pgfpathmoveto{\pgfqpoint{0.5pt}{0pt}}
+        \pgfpathlineto{\pgfqpoint{0.5pt}{100pt}}
+        \pgfusepath{stroke}
+    } 
+ 
+ \pgfdeclarepatternformonly[\tikz@pattern@color,\LineSpace,\LineWidth]{my grid}%
+    {\pgfqpoint{-1pt}{-1pt}}{\pgfqpoint{\LineSpace}{\LineSpace}}
+    {\pgfqpoint{\LineSpace}{\LineSpace}}%
+    {
+        \pgfsetcolor{\tikz@pattern@color}
+        \pgfsetlinewidth{\LineWidth}
+        \pgfpathmoveto{\pgfqpoint{0pt}{0pt}}
+        \pgfpathlineto{\pgfqpoint{0pt}{\LineSpace + 0.1pt}}
+        \pgfpathmoveto{\pgfqpoint{0pt}{0pt}}
+        \pgfpathlineto{\pgfqpoint{\LineSpace + 0.1pt}{0pt}}
+        \pgfusepath{stroke}
+    }
+ 
+ \pgfdeclarepatternformonly[\tikz@pattern@color,\LineSpace,\LineWidth]{my north east lines}
+    {\pgfqpoint{-\LineWidth}{-\LineWidth}}{\pgfqpoint{\LineSpace}{\LineSpace}}
+    {\pgfqpoint{\LineSpace}{\LineSpace}}%
+    {
+        \pgfsetcolor{\tikz@pattern@color}
+        \pgfsetlinewidth{\LineWidth}
+        \pgfpathmoveto{\pgfqpoint{-\LineWidth}{-\LineWidth}}
+        \pgfpathlineto{\pgfqpoint{\LineSpace + 0.1pt}{\LineSpace + 0.1pt}}
+        \pgfusepath{stroke}
+    }
+ 
+ \pgfdeclarepatternformonly[\tikz@pattern@color,\LineSpace,\LineWidth]{my north west lines}
+    {\pgfqpoint{-\LineWidth}{-\LineWidth}}{\pgfqpoint{\LineSpace}{\LineSpace}}
+    {\pgfqpoint{\LineSpace}{\LineSpace}}%
+    {
+        \pgfsetcolor{\tikz@pattern@color}
+        \pgfsetlinewidth{\LineWidth}
+        \pgfpathmoveto{\pgfqpoint{-\LineWidth}{\LineSpace}}
+        \pgfpathlineto{\pgfqpoint{\LineSpace + 0.1pt}{-\LineWidth}}
+        \pgfusepath{stroke}
+    }
+ 
+ \pgfdeclarepatternformonly[\tikz@pattern@color,\LineSpace,\LineWidth]{my crosshatch}%
+    {\pgfqpoint{-1pt}{-1pt}}{\pgfqpoint{\LineSpace}{\LineSpace}}
+    {\pgfqpoint{\LineSpace}{\LineSpace}}%
+    {
+        \pgfsetcolor{\tikz@pattern@color}
+        \pgfsetlinewidth{\LineWidth}
+        \pgfpathmoveto{\pgfqpoint{\LineSpace + 0.1pt}{0pt}}
+        \pgfpathlineto{\pgfqpoint{0pt}{\LineSpace + 0.1pt}}
+        \pgfpathmoveto{\pgfqpoint{0pt}{0pt}}
+        \pgfpathlineto{\pgfqpoint{\LineSpace + 0.1pt}{\LineSpace + 0.1pt}}
+        \pgfusepath{stroke}
+    }
+ 
+ \pgfdeclarepatternformonly[\tikz@pattern@color,\LineSpace,\PointSize]{my dots}%
+    {\pgfqpoint{-\LineSpace*0.25}{-\LineSpace*0.25}}
+    {\pgfqpoint{\LineSpace*0.25}{\LineSpace*0.25}}
+    {\pgfqpoint{\LineSpace*0.75}{\LineSpace*0.75}}%
+    {
+        \pgfsetcolor{\tikz@pattern@color}
+        \pgfpathcircle{\pgfqpoint{0pt}{0pt}}{\PointSize}
+        \pgfusepath{fill}
+    }
+\makeatother
+ 
+\newdimen\LineSpace
+\newdimen\PointSize
+\newdimen\LineWidth
+\tikzset{
+    line space/.code={\LineSpace=#1},
+    line space=3pt
+}
+\tikzset{
+    point size/.code={\PointSize=#1},
+    point size=.5pt
+}
+\tikzset{
+    pattern line width/.code={\LineWidth=#1},
+    pattern line width=.4pt
+}
+
+\newcommand{\arrowthis}[2]{
+        \tikz[remember picture,baseline]{\node[anchor=base,inner sep=0,outer sep=0]%
+        (#1) {\underline{#1}};
+        \node[overlay,single arrow,draw=none,fill=red!50,anchor=tip,rotate=60] 
+        at (#1.south) {#2};}%
+    }%
+
+\newcommand{\speechthis}[2]{
+        \tikz[remember picture,baseline]{\node[anchor=base,inner sep=0,outer sep=0]%
+        (#1) {\underline{#1}};\node[overlay,ellipse callout,fill=blue!50] 
+        at ($(#1.north)+(-.5cm,0.8cm)$) {#2};}%
+    }%
+
+\newcommand{\bubblethis}[2]{
+        \tikz[remember picture,baseline]{\node[anchor=base,inner sep=0,outer sep=0]%
+        (#1) {\underline{#1}};\node[overlay,cloud callout,callout relative pointer={(0.2cm,-0.7cm)},%
+        aspect=2.5,fill=yellow!90] at ($(#1.north)+(-0.5cm,1.6cm)$) {#2};}%
+    }%
+
+\newcommand{\pointthis}[2]{
+        \tikz[remember picture,baseline]{\node[anchor=base,inner sep=0,outer sep=0]%
+        (#1) {\underline{#1}};\node[overlay,rectangle callout,%
+        callout relative pointer={(0.2cm,0.7cm)},fill=green!50] at ($(#1.north)+(-.5cm,-1.4cm)$) {#2};}%
+        }%
+        
+\newcommand{\leftpointthis}[2]{
+        \tikz[remember picture,baseline]{\node[anchor=base,inner sep=0,outer sep=0]%
+        (#1) {\underline{#1}};\node[overlay,rectangle callout,%
+        callout relative pointer={(0.2cm,0.7cm)},fill=green!50] at ($(#1.north)+(-.5cm,-1.4cm)$) {#2};}%
+        }%
+
+\newcommand{\rightpointthis}[2]{
+        \tikz[remember picture,baseline]{\node[anchor=base,inner sep=0,outer sep=0]%
+        (#1) {\underline{#1}};\node[overlay,rectangle callout,%
+        callout relative pointer={(-0.3cm,0.7cm)},fill=green] at ($(#1.north)+(.5cm,-1.4cm)$) {#2};}%
+        }%        
+
+\tikzset{
+pics/mycara/.style args={#1}{
+code = {
+    \shade[top color=#1, bottom color=white, shading angle={135}]
+    [draw=black,fill=red!20,rounded corners=1.2ex,very thick] (1.5,.5) -- ++(0,1) -- ++(1,0.3) --  ++(3,0) -- ++(1,0) -- ++(0,-1.3) -- (1.5,.5) -- cycle;
+    \draw[very thick, rounded corners=0.5ex,fill=black!20!blue!20!white,thick]  (2.5,1.8) -- ++(1,0.7) -- ++(1.6,0) -- ++(0.6,-0.7) -- (2.5,1.8);
+    \draw[thick]  (4.2,1.8) -- (4.2,2.5);
+    \draw[draw=black,fill=gray!50,thick] (2.75,.5) circle (.5);
+    \draw[draw=black,fill=gray!50,thick] (5.5,.5) circle (.5);
+    \draw[draw=black,fill=gray!80,semithick] (2.75,.5) circle (.4);
+    \draw[draw=black,fill=gray!80,semithick] (5.5,.5) circle (.4);
+}}}
+
+
+\tikzset{
+radiation/.style={{decorate,decoration={expanding waves,angle=90,segment length=4pt}}},
+    pics/antenna/.style={
+      code = {
+      \draw[semithick] (0,0) -- (1,4);% left line
+      \draw[semithick] (3,0) -- (2,4);% right line
+      \draw[semithick] (0,0) arc (180:0:1.5 and -0.5);
+      \node[inner sep=4pt] (circ) at (1.5,5.5) {};
+      \draw[semithick] (1.5,5.5) circle(8pt);
+      \draw[semithick] (1.5,5.5cm-8pt) -- (1.5,4);
+      \draw[semithick] (1.5,4) ellipse (0.5 and 0.166);
+      \draw[semithick,radiation,decoration={angle=45}] (1.5cm+8pt,5.5) -- +(0:2);
+      \draw[semithick,radiation,decoration={angle=45}] (1.5cm-8pt,5.5) -- +(180:2);        
+}}}
+% \draw pic[below of =h] {antenna};
+
+
+% Add nodes on the curves drawn using pfgplots \addplot
+% Add a node inside the axis at a given axis coordinate
+% \node[name=lin_graph_point] at (axis cs:11,0.0245){};
+% Add a node along the plotted path at 0.75 from the start point
+%\addplot[][]{} coordinate[pos=0.75](lin_graph_point);
+
+
+% To mirror use xscale=-1 and/or yscale=-1 in the arguments
